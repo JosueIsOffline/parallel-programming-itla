@@ -7,29 +7,46 @@ namespace TaskFactory_Demo
         static async Task Main()
         {
             Console.WriteLine("=== Inicio del Programa ===\n");
+          
             Stopwatch sw = Stopwatch.StartNew();
             Console.WriteLine($"[Principal] Ejecutándose en hilo: {Environment.CurrentManagedThreadId}\n");
             // Crear y ejecutar tarea con opciones avanzadas
-            Task task = Task.Factory.StartNew(() =>
-            {
-                Console.WriteLine($"[Tarea] Iniciada en hilo: {Environment.CurrentManagedThreadId}");
-                Console.WriteLine($"[Tarea] Esta es una tarea de larga duración\n");
-                for (int i = 0; i <= 10; i++)
-                {
-                    Console.WriteLine($"[Tarea] Iteración: {i}");
-                    Task.Delay(200).Wait(); // Simula trabajo pesado
-                }
-                Console.WriteLine("\n[Tarea] Finalizada correctamente");
-            }, TaskCreationOptions.LongRunning);
+            //Task task = Task.Factory.StartNew(() =>
+            //{
+            //    Console.WriteLine($"[Tarea] Iniciada en hilo: {Environment.CurrentManagedThreadId}");
+            //    Console.WriteLine($"[Tarea] Esta es una tarea de larga duración\n");
+            //    for (int i = 0; i <= 10; i++)
+            //    {
+            //        Console.WriteLine($"[Tarea] Iteración: {i}");
+            //        Task.Delay(200).Wait(); // Simula trabajo pesado
+            //    }
+            //    Console.WriteLine("\n[Tarea] Finalizada correctamente");
+            //}, TaskCreationOptions.LongRunning);
+
+            Task[] tasks = [
+                 Task.Factory.StartNew(() => Sum(500_000), TaskCreationOptions.LongRunning),
+                 Task.Factory.StartNew(() => getData(), TaskCreationOptions.LongRunning),
+                 Task.Factory.StartNew(() => ProcessData(), TaskCreationOptions.LongRunning),
+                 Task.Factory.StartNew(() => {
+                     Console.WriteLine($"[Task Anonymous] Ejecutándose en hilo: {Environment.CurrentManagedThreadId}");
+                        for(int i = 0; i <= 100; i += 10){
+                         if(i % 20 == 0) Console.WriteLine($"[Task Anonymous] Progreso: {i}%");
+                     }
+                     Console.WriteLine($"[Task Anonymous] Finalizada.");
+                 })
+            ];
+
+
             Console.WriteLine("[Principal] Tarea en ejecución...\n");
 
             // IMPORTANTE: Esperar a que la tarea termine
-           
-            Console.WriteLine("\n=== Tarea completada ===");
+            await Task.WhenAll(tasks);
+
+            Console.WriteLine("\n=== Todas las tareas han completado ===");
 
             Console.WriteLine("=== Fin del Programa ===\n");
             sw.Stop();
-            
+
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine($"Tiempo trancurrido: {sw.ElapsedMilliseconds}ms");
             Console.ResetColor();
@@ -103,6 +120,46 @@ namespace TaskFactory_Demo
              */
 
 
+        }
+
+        static void Sum(int n)
+        {
+            Console.WriteLine($"[Task Sum] Ejecutándose en hilo: {Environment.CurrentManagedThreadId}");
+
+            long sum = 0;
+            for (int i = 1; i <= n; i++)
+            {
+                sum += i;
+                if (i % (n / 10) == 0)
+                {
+                    Task.Delay(200).Wait();
+                    Console.WriteLine($"[Task Sum] Progreso: {i * 100 / n}%");
+                }
+            }
+            Console.WriteLine($"[Task Sum] Finalizada");
+            Console.WriteLine($"[Task Sum] Resultado: {sum}");
+        }
+
+        static void getData()
+        {
+            Console.WriteLine($"[Task getData] Ejecutándose en hilo: {Environment.CurrentManagedThreadId}");
+            for (int i = 0; i <= 5; i++)
+            {
+                Console.WriteLine($"[Task getData] Obteniendo datos... {i}");
+                Thread.Sleep(500);
+            }
+            Console.WriteLine($"[Task getData] Finalizada");
+        }
+
+        static void ProcessData()
+        {
+            Console.WriteLine($"[Task ProcessData] Ejecutándose en hilo: {Environment.CurrentManagedThreadId}");
+            for (int i = 0; i <= 5; i++)
+            {
+                Console.WriteLine($"[Task ProcessData] Procesando datos... {i}");
+                Task.Delay(500).Wait();
+            }
+            Console.WriteLine($"[Task ProcessData] Finalizada");
         }
     }
 }
